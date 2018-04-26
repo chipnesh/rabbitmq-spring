@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: messageHandler
+  rabbitmq:
+    host: rtd-dev03
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: queue
+          group: ${spring.application.name}
+          binder: local_rabbit
+          consumer:
+            maxAttempts: 1 # enable dlq
+        output:
+          destination: queue
+          group: ${spring.application.name}
+          binder: local_rabbit
+        fallback:
+          destination: fallback
+          group: ${spring.application.name}
+          binder: local_rabbit
+      binders:
+        local_rabbit:
+          type: rabbit
+      rabbit:
+        bindings:
+          input:
+            consumer:
+#              acknowledgeMode: MANUAL # if handlers are async for example
+              republishToDlq : true # enable dlq
+              autoBindDlq: true # enable dlq
+              deadLetterQueueName: dlq # single dlq retry queue for app
